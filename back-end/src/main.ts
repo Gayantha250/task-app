@@ -1,4 +1,4 @@
-import express from 'express';
+import express, {json} from 'express';
 import mysql, {Pool} from 'promise-mysql';
 
 const app=express();
@@ -19,17 +19,33 @@ let pool:Pool;
 
 
 
-
+app.use(json());           //use for read the json coming from the request
 app.use('/app/api/v1/tasks',router);
 app.listen(8080,()=>console.log("Server is started"));
 
-router.get('/',(req, res)=>{
+type Task={
 
+    id:number,
+    description:string,
+    status:'COMPLETED'|'PENDING'|undefined
+}
 
-
+router.get('/',async (req, res)=>{
+const getAllTasks = await pool.query("SELECT * FROM tasks");
+res.json(getAllTasks);
 });
-router.post('/',(req, res)=>{
+router.post('/',async (req, res)=>{
+    const body = req.body as Task;
+    if(!body.description?.trim()){
+        res.sendStatus(400);
+        return;
+    }
 
+const insertValues = await pool.query("INSERT INTO tasks (description, status) VALUES (?,DEFAULT) ",[body.description]);
+
+body.id = insertValues.insertId;
+body.status='PENDING';
+res.status(201).json(body);  //its not necessary to send json but when its send we can get some advantages like we can show them in toast
 });
 
 router.patch('/',(req, res)=>{
