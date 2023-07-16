@@ -5,6 +5,7 @@ const app=express();
 const router = express.Router();
 let pool:Pool;
 
+initPool();
  async function initPool(){
      pool= await mysql.createPool({
         host:'localhost',
@@ -48,11 +49,23 @@ body.status='PENDING';
 res.status(201).json(body);  //its not necessary to send json but when its send we can get some advantages like we can show them in toast
 });
 
-router.patch('/',(req, res)=>{
+router.patch('/:taskId',async (req, res)=>{
 
+    const task = req.body as Task;
+     const taskId =+req.params.taskId;
+
+     const updateValues = await pool.query("UPDATE tasks SET description=?, status=? WHERE id=?",[task.description,task.status,taskId]);
+     res.sendStatus(updateValues.affectedRows?204:404);
 });
 
-router.delete('/',(req, res)=>{
+router.delete('/:taskId',async (req, res)=>{
+
+
+    const taskId = req.params.taskId;
+
+    const deleteTasks =await pool.query("DELETE FROM tasks WHERE id=?",[taskId]);
+
+    res.sendStatus(deleteTasks.affectedRows?204:400);
 
 });
 
